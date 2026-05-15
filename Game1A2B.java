@@ -63,7 +63,35 @@ public class Game1A2B extends JPanel {
         inputField.setText("");
         inputField.setEnabled(true);
         submitBtn.setEnabled(true);
-        // System.out.println("Debug 答案: " + answer); // 除錯用
+        System.out.println("Debug 答案: " + answer); // 除錯用
     }
-    
+        private void checkGuess() {
+        String guess = inputField.getText().trim();
+
+        // 檢查格式
+        if (guess.length() != 4 || !guess.matches("\\d{4}")) {
+            JOptionPane.showMessageDialog(this, "請輸入正確的 4 位數字！");
+            return;
+        }
+
+        int a = 0, b = 0;
+        // 比對 A 和 B
+        for (int i = 0; i < 4; i++) {
+            char g = guess.charAt(i);
+            if (g == answer.charAt(i)) {
+                a++;
+            } else if (answer.contains(String.valueOf(g))) {
+                b++;
+            }
+        }
+
+        logArea.append(guess + " -> " + a + "A" + b + "B\n");
+        inputField.setText("");
+
+        if (a == 4) {
+            JOptionPane.showMessageDialog(this, "恭喜答對了！答案就是 " + answer);
+            submitBtn.setEnabled(false);
+            inputField.setEnabled(false);
+        }
+    }
 }
