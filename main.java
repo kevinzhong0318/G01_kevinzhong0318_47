@@ -11,31 +11,54 @@ public class Main extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // 初始化主選單
+        // 1. 初始化主選單
         JPanel mainMenu = new JPanel(new GridLayout(4, 1, 10, 10));
         String[] games = {"OOXX", "1A2B", "小恐龍", "踩地雷"};
         
-        for (String game : games) {
-            JButton btn = new JButton(game);
-            btn.addActionListener(e -> cardLayout.show(container, game));
+        for (String gameName : games) {
+            JButton btn = new JButton(gameName);
+            btn.addActionListener(e -> {
+                // 切換畫面
+                cardLayout.show(container, gameName);
+                
+                // 關鍵：如果切換到「小恐龍」，必須讓該面板取得焦點，鍵盤監聽才會生效
+                if (gameName.equals("小恐龍")) {
+                    for (Component comp : container.getComponents()) {
+                        if (comp instanceof DinoGame) {
+                            comp.requestFocusInWindow();
+                        }
+                    }
+                }
+            });
             mainMenu.add(btn);
         }
 
-        // 加入各個遊戲面板 (這裡先預留介面)
+        // 2. 加入各個遊戲面板到容器中
         container.add(mainMenu, "Menu");
+        
+        // 注意：請確保你的 OOXX, Game1A2B 類別建構子都有接收 (Main parent)
         container.add(new OOXX(this), "OOXX");
         container.add(new Game1A2B(this), "1A2B");
-        // 恐龍與踩地雷依此類推...
+        container.add(new DinoGame(this), "小恐龍");
+        
+        // 如果有踩地雷，取消註釋並確保建構子正確
+        // container.add(new MineSweeper(this), "踩地雷");
 
         add(container);
         setVisible(true);
     }
 
+    /**
+     * 提供給子遊戲面板呼叫，用來回到主選單
+     */
     public void backToMenu() {
         cardLayout.show(container, "Menu");
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Main::new);
+        // 使用事件調度線程啟動 Swing 程式
+        SwingUtilities.invokeLater(() -> {
+            new Main();
+        });
     }
 }
