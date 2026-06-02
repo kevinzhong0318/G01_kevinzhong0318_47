@@ -11,17 +11,22 @@ public class Main extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // 1. 初始化主選單
+        // 1. 初始化主選單 (將最後一個修改為 退出程式)
         JPanel mainMenu = new JPanel(new GridLayout(4, 1, 10, 10));
-        String[] games = {"OOXX", "1A2B", "小恐龍", "踩地雷"};
+        String[] games = {"OOXX", "1A2B", "小恐龍", "退出程式"};
         
         for (String gameName : games) {
             JButton btn = new JButton(gameName);
             btn.addActionListener(e -> {
-                // 切換畫面
+                // 關鍵修正：如果點擊的是退出程式，直接關閉 JVM
+                if (gameName.equals("退出程式")) {
+                    System.exit(0); 
+                }
+
+                // 其他遊戲則正常切換畫面
                 cardLayout.show(container, gameName);
                 
-                // 關鍵：如果切換到「小恐龍」，必須讓該面板取得焦點，鍵盤監聽才會生效
+                // 如果切換到「小恐龍」，必須讓該面板取得焦點，鍵盤監聽才會生效
                 if (gameName.equals("小恐龍")) {
                     for (Component comp : container.getComponents()) {
                         if (comp instanceof DinoGame) {
@@ -40,9 +45,6 @@ public class Main extends JFrame {
         container.add(new OOXX(this), "OOXX");
         container.add(new Game1A2B(this), "1A2B");
         container.add(new DinoGame(this), "小恐龍");
-        
-        // 如果有踩地雷，取消註釋並確保建構子正確
-        // container.add(new MineSweeper(this), "踩地雷");
 
         add(container);
         setVisible(true);
