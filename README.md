@@ -51,22 +51,25 @@ graph TD
         Timer[Swing Timer] -->|觸發 actionPerformed| UpdateScore[分數 score++ / 速度 gameSpeed 成長]
         UpdateScore --> Hitbox[動態 Hitbox 偵測: 判斷 isCrouching 與地面高度]
         Hitbox --> Physics[更新角色 Y 軸位移與重力加速度]
-        Physics --> SpawnCheck{分數 > 70 且 滿足最小間距?}
     
+        Physics --> SpawnCheck{分數 > 70 且 滿足最小間距?}
+  
         SpawnCheck -->|否: 安全期/冷卻中| MoveObstacles[移動現有障礙物]
         SpawnCheck -->|是: 隨機機率| TypeCheck{score < 700 ?}
-    
+  
         TypeCheck -->|是| SpawnCactus[100% 生成仙人掌 單顆/叢生]
         TypeCheck -->|否| SpawnRandom[50% 仙人掌 / 50% 翼手龍]
-    
+  
         SpawnCactus --> MoveObstacles
         SpawnRandom --> MoveObstacles
-    
+  
         MoveObstacles --> CollisionCheck{障礙物與恐龍 Hitbox 相交?}
+    
         CollisionCheck -->|是| GameOver[isGameOver = true / 停止 Timer]
         CollisionCheck -->|否| Repaint[觸發 repaint 渲染畫面]
-    
+  
         Repaint --> DayNight{score / 700 餘數判斷}
+    
         DayNight -->|奇數關卡| NightBg[渲染黑夜背景 + 繪製角色與障礙物圖片]
         DayNight -->|偶數關卡| DayBg[渲染白天背景 + 繪製角色與障礙物圖片]
     end
