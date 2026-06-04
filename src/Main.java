@@ -28,6 +28,7 @@ public class Main extends JFrame {
                     // 先移除舊的（如果有的話），確保每次都是全新一局
                     removeComponentByName("小恐龍");
                     
+                    
                     // 建立全新的小恐龍遊戲
                     DinoGame dinoGame = new DinoGame(this);
                     container.add(dinoGame, "小恐龍");
