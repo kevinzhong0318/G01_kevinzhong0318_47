@@ -54,15 +54,40 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
         }
 
         obstacles = new ArrayList<>();
+        
+        // 🛠️ 徹底封印：這裡絕對不建立 Timer 物件，防止 Swing 預先觸發事件
+        timer = null;
+    }
+
+    /**
+     * 當 Main 確定切換到此畫面後，才會由外部呼叫此方法
+     * 進行數據初始化並正式建立計時器啟動遊戲
+     */
+    public void startGame() {
+        // 1. 初始化所有基礎遊戲數據，確保重頭開始
+        dinoY = GROUND_Y;
+        dinoHeight = 40;
+        gameSpeed = 8.0; 
+        obstacles.clear();
+        score = 0;
+        isGameOver = false;
+        isCrouching = false;
+        
+        // 2. 核心修正：安全關閉舊的計時器，並在此時才建立新計時器
+        if (timer != null) {
+            timer.stop();
+        }
         timer = new Timer(20, this); // 約 50 FPS
         timer.start();
+        
+        repaint();
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         
-        // 1. 每 700 分切換一次白天與黑夜 (奇數關卡白天，偶數關卡黑夜)
+        // 每 700 分切換一次白天與黑夜 (奇數關卡白天，偶數關卡黑夜)
         boolean isNight = ((score / 700) % 2 != 0);
         if (isNight) {
             setBackground(new Color(30, 30, 30)); // 暗色背景
@@ -75,14 +100,14 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
         // 畫固定的地面基準線
         g.drawLine(0, GROUND_Y + 40, WIDTH, GROUND_Y + 40);
 
-        // 2. 畫角色 (根據蹲下狀態切換站立/蹲下圖片)
+        // 畫角色 (根據蹲下狀態切換站立/蹲下圖片)
         if (isCrouching) {
             g.drawImage(dinoSitImg, dinoX, dinoY, dinoWidth, dinoHeight, null);
         } else {
             g.drawImage(dinoImg, dinoX, dinoY, dinoWidth, dinoHeight, null);
         }
 
-        // 3. 畫障礙物 (依據矩形特徵判斷要渲染哪張圖片)
+        // 畫障礙物 (依據矩形特徵判斷要渲染哪張圖片)
         for (Rectangle rect : obstacles) {
             if (rect.height < 30) {
                 // 翼手龍
@@ -96,7 +121,7 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // 4. UI 資訊看板
+        // UI 資訊看板
         g.setColor(isNight ? Color.WHITE : Color.BLACK);
         g.setFont(new Font("Monospaced", Font.BOLD, 20));
         g.drawString(String.format("Score: %05d", score), 430, 30);
@@ -149,12 +174,11 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
             velocityY = 0;        // 落地
         }
 
-        // 4. 障礙物動態生成 (修正：70分以下為安全期，不生成任何障礙物)
+        // 4. 障礙物動態生成 (70分以下為安全期，不生成任何障礙物)
         int dynamicMinDist = (int)(minDistance + gameSpeed * 5); 
         boolean canSpawn = obstacles.isEmpty() || (WIDTH - obstacles.get(obstacles.size() - 1).x >= dynamicMinDist);
         
         if (score > 70 && canSpawn && new Random().nextInt(100) < 3) {
-            // 關鍵修正：如果分數小於 700，百分之百只生仙人掌
             if (score < 700) {
                 // --- 700分前：純仙人掌階段 ---
                 if (new Random().nextBoolean()) {
@@ -174,7 +198,7 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
                 } else {
                     // 出翼手龍 (隨機高空或貼地)
                     if (new Random().nextBoolean()) {
-                        obstacles.add(new Rectangle(WIDTH, GROUND_Y - 10, 30, 20));  // 高空翼手龍
+                        obstacles.add(new Rectangle(WIDTH, GROUND_Y - 10, 30, 20)); // 高空翼手龍
                     } else {
                         obstacles.add(new Rectangle(WIDTH, GROUND_Y + 20, 30, 20)); // 低空翼手龍
                     }
@@ -182,14 +206,12 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
             }
         }
 
-        // 5. 障礙物位移與精密碰撞偵測（加入縮減判定，讓邊界更精準）
+        // 5. 障礙物位移與精密碰撞偵測
         for (int i = 0; i < obstacles.size(); i++) {
             Rectangle rect = obstacles.get(i);
             rect.x -= (int)gameSpeed; 
 
             // --- 精密碰撞優化：將實體邊框內縮，去除圖片留白造成的誤判 ---
-            
-            // 恐龍碰撞箱微幅內縮 (左右各縮 4 px，上下各縮 2 px)
             int dPadX = 4;
             int dPadY = 2;
             Rectangle fineDinoHitbox = new Rectangle(
@@ -199,7 +221,7 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
                 dinoHeight - (dPadY * 2)
             );
 
-            // 根據不同障礙物給予不同的邊距容錯（單位：像素）
+            // 根據不同障礙物給予不同的邊距容錯
             int oPadX = 3; 
             int oPadY = 3; 
             
@@ -227,13 +249,13 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
             // 使用精準化後的碰撞箱進行交叉判定
             if (fineDinoHitbox.intersects(fineObstacleHitbox)) {
                 isGameOver = true;
-                timer.stop();
+                if (timer != null) timer.stop();
             }
 
             // 移出螢幕後自動釋放記憶體
             if (rect.x + rect.width < 0) {
                 obstacles.remove(i);
-                i--; // 核心修正：移除元素後，索引值減 1 避免漏算下一個物件的位置與碰撞
+                i--; // 核心修正：移除元素後索引減 1，避免漏算下一個物件
             }
         }
         repaint();
@@ -243,47 +265,38 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
         
-        // 跳躍：支援空白鍵與上方向鍵 (空中或蹲下時無法觸發)
+        // 跳躍：支援空白鍵與上方向鍵
         if ((code == KeyEvent.VK_SPACE || code == KeyEvent.VK_UP) && dinoY >= GROUND_Y && !isCrouching) {
             velocityY = -17;
         }
         
-        // 蹲下：按住下方向鍵 (限制只能在地面上按才能觸發，防止空中蹲下 Bug)
+        // 蹲下：按住下方向鍵
         if (code == KeyEvent.VK_DOWN && dinoY >= GROUND_Y) {
             isCrouching = true;
         }
         
         // 遊戲結束時的按鍵處理
         if (isGameOver) {
-            if (code == KeyEvent.VK_R) restartGame();
-            else if (code == KeyEvent.VK_ESCAPE) parent.backToMenu();
+            if (code == KeyEvent.VK_R) {
+                startGame(); // 重新開始直接呼叫包裝好的啟動方法
+            } else if (code == KeyEvent.VK_ESCAPE) {
+                if (timer != null) timer.stop(); // 回選單前確實停止計時器
+                parent.backToMenu();
+            }
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        // 放開下方向鍵時解除蹲下
         if (e.getKeyCode() == KeyEvent.VK_DOWN) {
             isCrouching = false;
         }
     }
 
-    private void restartGame() {
-        dinoY = GROUND_Y;
-        dinoHeight = 40;
-        gameSpeed = 8.0; // 重置初始速度
-        obstacles.clear();
-        score = 0;
-        isGameOver = false;
-        isCrouching = false;
-        timer.start();
-        repaint();
-    }
-
     @Override
     public void addNotify() {
         super.addNotify();
-        requestFocusInWindow(); // 強制讓面板一載入就取得鍵盤焦點
+        requestFocusInWindow(); 
     }
 
     @Override public void keyTyped(KeyEvent e) {}

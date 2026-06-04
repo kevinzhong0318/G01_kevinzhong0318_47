@@ -12,43 +12,62 @@ public class Main extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // 1. 初始化主選單 (將最後一個修改為 退出程式)
+        // 1. 初始化主選單
         JPanel mainMenu = new JPanel(new GridLayout(4, 1, 10, 10));
         String[] games = {"OOXX", "1A2B", "小恐龍", "退出程式"};
         
         for (String gameName : games) {
             JButton btn = new JButton(gameName);
             btn.addActionListener(e -> {
-                // 關鍵修正：如果點擊的是退出程式，直接關閉 JVM
+                // 如果點擊的是退出程式，直接關閉 JVM
                 if (gameName.equals("退出程式")) {
                     System.exit(0); 
                 }
 
-                // 其他遊戲則正常切換畫面
-                cardLayout.show(container, gameName);
-                
-                // 如果切換到「小恐龍」，必須讓該面板取得焦點，鍵盤監聽才會生效
                 if (gameName.equals("小恐龍")) {
-                    for (Component comp : container.getComponents()) {
-                        if (comp instanceof DinoGame) {
-                            comp.requestFocusInWindow();
-                        }
-                    }
+                    // 先移除舊的（如果有的話），確保每次都是全新一局
+                    removeComponentByName("小恐龍");
+                    
+                    // 建立全新的小恐龍遊戲
+                    DinoGame dinoGame = new DinoGame(this);
+                    container.add(dinoGame, "小恐龍");
+                    
+                    // 切換畫面
+                    cardLayout.show(container, "小恐龍");
+                    
+                    // 強制抓取鍵盤焦點，並啟動遊戲！
+                    dinoGame.requestFocusInWindow();
+                    dinoGame.startGame(); // 呼叫 DinoGame 的開始方法
+                } else {
+                    // 其他靜態遊戲正常切換畫面
+                    cardLayout.show(container, gameName);
                 }
             });
             mainMenu.add(btn);
         }
 
-        // 2. 加入各個遊戲面板到容器中
+        // 2. 加入固定不變的遊戲面板到容器中
         container.add(mainMenu, "Menu");
-        
-        // 注意：請確保你的 OOXX, Game1A2B 類別建構子都有接收 (Main parent)
         container.add(new OOXX(this), "OOXX");
         container.add(new Game1A2B(this), "1A2B");
-        container.add(new DinoGame(this), "小恐龍");
+        
+        // 🛠️ 核心修正：這裡不再預先 new DinoGame(this) 了！把那一行刪除
 
         add(container);
         setVisible(true);
+    }
+
+    /**
+     * 輔助方法：用來動態移除 container 中舊的面板
+     */
+    private void removeComponentByName(String name) {
+        for (Component comp : container.getComponents()) {
+            // CardLayout 的命名管理是內部的，我們可以利用元件的 class 型態來辨識移除
+            if (comp instanceof DinoGame) {
+                container.remove(comp);
+                break;
+            }
+        }
     }
 
     /**
