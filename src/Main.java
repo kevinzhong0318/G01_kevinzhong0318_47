@@ -62,7 +62,6 @@ public class Main extends JFrame {
      */
     private void removeComponentByName(String name) {
         for (Component comp : container.getComponents()) {
-            // CardLayout 的命名管理是內部的，我們可以利用元件的 class 型態來辨識移除
             if (comp instanceof DinoGame) {
                 container.remove(comp);
                 break;
