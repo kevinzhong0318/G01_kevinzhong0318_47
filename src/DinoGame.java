@@ -54,15 +54,8 @@ public class DinoGame extends JPanel implements ActionListener, KeyListener {
         }
 
         obstacles = new ArrayList<>();
-        
-        // 🛠️ 徹底封印：這裡絕對不建立 Timer 物件，防止 Swing 預先觸發事件
         timer = null;
     }
-
-    /**
-     * 當 Main 確定切換到此畫面後，才會由外部呼叫此方法
-     * 進行數據初始化並正式建立計時器啟動遊戲
-     */
     public void startGame() {
         // 1. 初始化所有基礎遊戲數據，確保重頭開始
         dinoY = GROUND_Y;
